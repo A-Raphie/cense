@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cense
 
-## Getting Started
+**Sense, priced in cents.** A verification agent on Celo mainnet: pay a few cents of USDC over [x402](https://www.x402.org), get a sourced fact-check verdict. Every check is paid, serial-numbered, and provable.
 
-First, run the development server:
+Built in the open for [Celo's Agents at Work hackathon](https://celobuilders.xyz) (Aug 28 – Sep 21, 2026).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Status
+
+Day 1. The x402 payment rail is proven end to end against Celo's hosted facilitator (`spike/`): unpaid request → `402` with payment requirements → buyer signs an EIP-3009 authorization → retry with payment → facilitator verify. Final onchain settle lands as soon as the buyer wallet is funded.
+
+```
+bun install
+cp .env.example .env        # fill keys
+bun run spike/server.ts     # x402 resource server (POST /v1/check, $0.01 USDC)
+bun run spike/buyer.ts "some claim" "http://127.0.0.1:8913/v1/check"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What it does
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Any human or agent `POST`s a claim to the paid endpoint.
+2. The x402 middleware prices it at $0.01 USDC on Celo mainnet (`eip155:42220`).
+3. The buyer signs a gasless EIP-3009 `transferWithAuthorization`; the facilitator settles onchain and pays the gas.
+4. Cense checks the claim against live web sources and returns a verdict with evidence.
+5. Verdict receipts are anchored onchain — every check leaves a public, curl-able proof.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Why paid
 
-## Learn More
+Free fact-checking gets you a language model's guess. A paid verdict is a different product: the agent stakes its reputation (ERC-8004 identity) on every answer, the payment makes spam uneconomic, and the onchain settlement makes each check auditable. Cents, not subscriptions.
 
-To learn more about Next.js, take a look at the following resources:
+## Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Next.js · TypeScript · viem · `@x402/*` (official Celo facilitator, `api.x402.celo.org`) · `@celo/attribution-tags` (ERC-8021) · ERC-8004 agent identity · Groq (`openai/gpt-oss-120b` + built-in browser search) · Vercel.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+built by [Raphie](https://x.com/a_raphie)
