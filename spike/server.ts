@@ -1,10 +1,20 @@
 // Cense spike — x402 resource server on Celo mainnet.
-// Proves the payment rail end to end with the official Celo facilitator.
-// The claim engine here is a stub; the real engine lands in the core build.
+// Proves the full product: paid request → real sourced verdict.
 import express from "express";
 import { paymentMiddleware, x402ResourceServer } from "@x402/express";
 import { HTTPFacilitatorClient, type RoutesConfig } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import { checkClaim } from "../lib/engine";
+
+// cwd-proof .env load (bun autoloads from cwd; the harness resets cwd)
+const here = dirname(fileURLToPath(import.meta.url));
+for (const line of readFileSync(join(here, "..", ".env"), "utf8").split("\n")) {
+  const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
+  if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
+}
 
 const CELO_MAINNET = "eip155:42220";
 const USDC = "0xcEBA9300f2b948710d2653dD7B07f33A8B32118C";
@@ -50,14 +60,14 @@ app.use(((req, _res, next) => {
 }) as express.RequestHandler);
 app.use(paymentMiddleware(routes, server));
 
-app.post("/v1/check", (req, res) => {
+app.post("/v1/check", async (req, res) => {
   const claim = String(req.body?.claim ?? "").slice(0, 500);
-  res.json({
-    engine: "cense-spike-stub",
-    claim,
-    verdict: "SPIKE_STUB",
-    note: "payment rail proven; real engine lands in the core build",
-  });
+  try {
+    const result = await checkClaim(claim);
+    res.json(result);
+  } catch (err) {
+    res.status(422).json({ error: err instanceof Error ? err.message : "check failed" });
+  }
 });
 
 const port = Number(process.env.PORT ?? 8787);
