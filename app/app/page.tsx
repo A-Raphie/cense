@@ -157,7 +157,17 @@ export default function AppPage() {
           }}
         />
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          {wallet ? (
+          {/* ONE adaptive primary: free house check first, wallet after it is spent.
+              His catch Sep 14: two buttons + "no wallet needed" copy contradicted. */}
+          {!houseSpent ? (
+            <button
+              className="btn btn-primary"
+              disabled={phase === "searching" || phase === "reading" || phase === "writing"}
+              onClick={() => void runCheck("house")}
+            >
+              Check · free
+            </button>
+          ) : wallet ? (
             <button
               className="btn btn-primary"
               disabled={!canWalletCheck}
@@ -170,14 +180,6 @@ export default function AppPage() {
               {walletBusy ? "Connecting…" : "Connect wallet to check"}
             </button>
           )}
-          <button
-            className="btn btn-ghost"
-            disabled={houseSpent || phase === "searching" || phase === "reading" || phase === "writing"}
-            title={houseSpent ? "Your house check is spent this visit" : undefined}
-            onClick={() => void runCheck("house")}
-          >
-            {houseSpent ? "House check spent" : "House check · free"}
-          </button>
           {wallet ? (
             <span className="chip" style={{ fontVariantNumeric: "tabular-nums" }}>
               {wallet.address.slice(0, 6)}…{wallet.address.slice(-4)} · {wallet.balance} USDC
