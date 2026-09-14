@@ -55,6 +55,11 @@ export async function POST(req: NextRequest) {
     dailyByIp.set("__global__", { date: day, count: globalCount + 1 });
     return NextResponse.json({ ...result, house: true });
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "check failed" }, { status: 422 });
+    const msg = err instanceof Error ? err.message : "check failed";
+    // setup/config faults must not leak env var names to visitors
+    const friendly = /KEY is not set|not configured/i.test(msg)
+      ? "The checker is warming up. Give it a minute and try again."
+      : msg;
+    return NextResponse.json({ error: friendly }, { status: 422 });
   }
 }
