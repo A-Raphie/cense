@@ -63,7 +63,13 @@ app.post("/api/v1/check", async (c) => {
     const result = await checkClaim(claim, { fast: true });
     return c.json(result);
   } catch (err) {
-    return c.json({ error: err instanceof Error ? err.message : "check failed" }, 422);
+    const msg = err instanceof Error ? err.message : "check failed";
+    const friendly = /KEY is not set|not configured/i.test(msg)
+      ? "the checker is warming up, retry"
+      : /rate limit|429/i.test(msg)
+        ? "daily check budget used up, retry after it resets"
+        : msg;
+    return c.json({ error: friendly }, 422);
   }
 });
 

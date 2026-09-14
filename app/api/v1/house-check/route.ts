@@ -62,10 +62,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ...result, house: true });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "check failed";
-    // setup/config faults must not leak env var names to visitors
+    // visitor-safe mapping: never leak env names or provider detail
     const friendly = /KEY is not set|not configured/i.test(msg)
       ? "The checker is warming up. Give it a minute and try again."
-      : msg;
+      : /rate limit|429/i.test(msg)
+        ? "The checker has used up its daily budget. It resets within the day; try again soon."
+        : msg;
     return NextResponse.json({ error: friendly }, { status: 422 });
   }
 }
