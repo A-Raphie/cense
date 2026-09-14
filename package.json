@@ -11,7 +11,17 @@
   "dependencies": {
     "next": "16.3.5",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "hono": "^4.13.7",
+    "express": "^5.1.0",
+    "@types/express": "^5.0.0",
+    "@x402/hono": "2.25.0",
+    "@x402/core": "2.25.0",
+    "@x402/evm": "2.25.0",
+    "@x402/express": "2.25.0",
+    "@x402/fetch": "2.25.0",
+    "viem": "2.56.5",
+    "@celo/attribution-tags": "0.3.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

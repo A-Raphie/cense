@@ -16,12 +16,7 @@ const publicClient = createPublicClient({ chain: celo, transport: http("https://
 const signer: ClientEvmSigner = {
   address: account.address,
   signTypedData: (message) =>
-    account.signTypedData({
-      domain: message.domain as never,
-      types: message.types as never,
-      primaryType: message.primaryType as never,
-      message: message.message as never,
-    }),
+    (account.signTypedData as unknown as (m: typeof message) => Promise<`0x${string}`>)(message),
   readContract: (args) => publicClient.readContract(args as never),
 };
 
