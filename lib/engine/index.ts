@@ -22,10 +22,10 @@ export async function checkClaim(
   const startedAt = Date.now();
   const agent = opts.fast
     ? new Agent(undefined, undefined, {
-        callTimeoutMs: 15_000,
+        callTimeoutMs: 25_000,
         max429Retries: 1,
         maxNetworkRetries: 1,
-        maxWaitMs: 5_000,
+        maxWaitMs: 4_000,
       })
     : new Agent();
   let evidence;
