@@ -60,11 +60,17 @@ export async function geminiSearch(claim: string, apiKey: string): Promise<Evide
     if (seen.has(key)) continue;
     seen.add(key);
     let domain = web.domain || "";
+    // some chunks omit domain and their uri is a google redirect — recover the
+    // real domain from the title (Gemini titles carry it) before falling back
+    if (!domain || domain.includes("vertexaisearch") || domain.includes("google")) {
+      const t = (web.title || "").trim();
+      if (/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(t)) domain = t;
+    }
     if (!domain) {
       try {
         domain = new URL(uri).hostname.replace(/^www\./, "");
       } catch {
-        domain = "google.com";
+        domain = "via Google Search";
       }
     }
     out.push({
