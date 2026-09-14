@@ -60,7 +60,7 @@ app.post("/api/v1/check", async (c) => {
     return c.json({ error: "body must be JSON: { claim }" }, 400);
   }
   try {
-    const result = await checkClaim(claim);
+    const result = await checkClaim(claim, { fast: true });
     return c.json(result);
   } catch (err) {
     return c.json({ error: err instanceof Error ? err.message : "check failed" }, 422);

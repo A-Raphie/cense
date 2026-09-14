@@ -33,6 +33,8 @@ export class Agent {
   private readonly apiKey: string;
   private readonly temperature: number;
   private readonly fetchImpl: FetchImpl;
+  private readonly callTimeoutMs: number;
+  private readonly max429Retries: number;
   readonly usage: UsageSummary = {
     calls: 0,
     promptTokens: 0,
@@ -40,12 +42,19 @@ export class Agent {
     costUsd: 0,
   };
 
-  constructor(env: NodeJS.ProcessEnv = process.env, fetchImpl: FetchImpl = fetch) {
+  constructor(
+    env: NodeJS.ProcessEnv = process.env,
+    fetchImpl: FetchImpl = fetch,
+    opts: { callTimeoutMs?: number; max429Retries?: number } = {},
+  ) {
     this.baseUrl = (env.CENSE_BASE_URL || DEFAULT_BASE_URL).replace(/\/+$/, "");
     this.apiKey = env.CENSE_API_KEY || env.GROQ_API_KEY || "";
     this.model = env.CENSE_MODEL || DEFAULT_MODEL;
     this.temperature = Number(env.CENSE_TEMPERATURE ?? 0);
     this.fetchImpl = fetchImpl;
+    // serverless budget: routes must finish inside the function window
+    this.callTimeoutMs = opts.callTimeoutMs ?? 120_000;
+    this.max429Retries = opts.max429Retries ?? 6;
     if (!this.apiKey) {
       throw new AgentError(
         "CENSE_API_KEY is not set. Cense needs any OpenAI-compatible key. " +
@@ -66,7 +75,7 @@ export class Agent {
     } catch (err) {
       throw new AgentError(`model call ${call.label} failed: ${(err as Error).message}`);
     }
-    if (res.status === 429 && attempt < 6) {
+    if (res.status === 429 && attempt < this.max429Retries) {
       const body = await res.text().catch(() => "");
       let waitMs = 15_000;
       const m = body.match(/try again in ([\d.]+)s/i);
@@ -116,7 +125,7 @@ export class Agent {
           authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(120_000),
+        signal: AbortSignal.timeout(this.callTimeoutMs),
       });
     } catch (err) {
       if (attempt < 8) {

@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await checkClaim(claim);
+    const result = await checkClaim(claim, { fast: true });
     dailyByIp.set(ip, { date: day, count: (rec?.date === day ? rec.count : 0) + 1 });
     dailyByIp.set("__global__", { date: day, count: globalCount + 1 });
     return NextResponse.json({ ...result, house: true });
