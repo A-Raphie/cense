@@ -10,7 +10,8 @@ export const maxDuration = 60;
 
 const dailyByIp = new Map<string, { date: string; count: number }>();
 const MAX_PER_IP_PER_DAY = 2;
-const GLOBAL_DAILY_CAP = 150;
+// Groq's free search bucket is ~24 heavy searches/day/org; stay honest about it
+const GLOBAL_DAILY_CAP = 20;
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);

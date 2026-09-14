@@ -20,8 +20,9 @@ export async function checkClaim(
   const trimmed = claim.trim().slice(0, 500);
   if (trimmed.length < 8) throw new Error("claim too short to check");
   const startedAt = Date.now();
-  // fast mode: search runs on 20b (browser_search is heavy AND rate buckets are
-  // per-model), verdict on 120b, falling back to 20b when 120b's bucket is dry
+  // fast mode: search runs on 20b at Groq (browser_search is a Groq-only server
+  // tool and heavy), verdict runs on Cencori credits when available (no TPD
+  // ceiling there), falling back to the search agent when Cencori 429s
   const fastOpts = {
     callTimeoutMs: 25_000,
     max429Retries: 1,
@@ -31,7 +32,23 @@ export async function checkClaim(
   const searchAgent = opts.fast
     ? new Agent(undefined, undefined, { ...fastOpts, model: "openai/gpt-oss-20b" })
     : new Agent();
-  const verifyAgent = opts.fast ? new Agent(undefined, undefined, fastOpts) : new Agent();
+
+  let verifyAgent: Agent;
+  if (opts.fast && process.env.CENCORI_API_KEY) {
+    const cencoriEnv = {
+      ...process.env,
+      CENSE_BASE_URL: process.env.CENCORI_BASE_URL || "https://api.cencori.com/v1",
+      CENSE_API_KEY: process.env.CENCORI_API_KEY,
+    };
+    verifyAgent = new Agent(cencoriEnv, undefined, {
+      ...fastOpts,
+      model: process.env.CENCORI_MODEL || "openai/gpt-oss-120b",
+    });
+  } else if (opts.fast) {
+    verifyAgent = new Agent(undefined, undefined, fastOpts);
+  } else {
+    verifyAgent = new Agent();
+  }
 
   let evidence;
   try {
@@ -45,7 +62,8 @@ export async function checkClaim(
     result = await verifyClaim(verifyAgent, { checkId, claim: trimmed, evidence }, startedAt);
   } catch (err) {
     const msg = (err as Error).message;
-    if (opts.fast && /429|rate limit/i.test(msg)) {
+    if (opts.fast) {
+      // Cencori (or the primary verdict rail) refused — fall back to the Groq agent
       result = await verifyClaim(searchAgent, { checkId, claim: trimmed, evidence }, startedAt);
     } else {
       throw new Error(`phase=verify: ${msg}`);
