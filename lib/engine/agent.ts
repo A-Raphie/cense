@@ -47,11 +47,11 @@ export class Agent {
   constructor(
     env: NodeJS.ProcessEnv = process.env,
     fetchImpl: FetchImpl = fetch,
-    opts: { callTimeoutMs?: number; max429Retries?: number; maxNetworkRetries?: number; maxWaitMs?: number } = {},
+    opts: { callTimeoutMs?: number; max429Retries?: number; maxNetworkRetries?: number; maxWaitMs?: number; model?: string } = {},
   ) {
     this.baseUrl = (env.CENSE_BASE_URL || DEFAULT_BASE_URL).replace(/\/+$/, "");
     this.apiKey = env.CENSE_API_KEY || env.GROQ_API_KEY || "";
-    this.model = env.CENSE_MODEL || DEFAULT_MODEL;
+    this.model = opts.model || env.CENSE_MODEL || DEFAULT_MODEL;
     this.temperature = Number(env.CENSE_TEMPERATURE ?? 0);
     this.fetchImpl = fetchImpl;
     // serverless budget: routes must finish inside the function window

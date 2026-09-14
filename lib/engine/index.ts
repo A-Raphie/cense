@@ -20,26 +20,36 @@ export async function checkClaim(
   const trimmed = claim.trim().slice(0, 500);
   if (trimmed.length < 8) throw new Error("claim too short to check");
   const startedAt = Date.now();
-  const agent = opts.fast
-    ? new Agent(undefined, undefined, {
-        callTimeoutMs: 25_000,
-        max429Retries: 1,
-        maxNetworkRetries: 1,
-        maxWaitMs: 4_000,
-      })
+  // fast mode: search runs on 20b (browser_search is heavy AND rate buckets are
+  // per-model), verdict on 120b, falling back to 20b when 120b's bucket is dry
+  const fastOpts = {
+    callTimeoutMs: 25_000,
+    max429Retries: 1,
+    maxNetworkRetries: 1,
+    maxWaitMs: 4_000,
+  } as const;
+  const searchAgent = opts.fast
+    ? new Agent(undefined, undefined, { ...fastOpts, model: "openai/gpt-oss-20b" })
     : new Agent();
+  const verifyAgent = opts.fast ? new Agent(undefined, undefined, fastOpts) : new Agent();
+
   let evidence;
   try {
-    evidence = await gatherEvidence(agent, trimmed);
+    evidence = await gatherEvidence(searchAgent, trimmed);
   } catch (err) {
     throw new Error(`phase=search: ${(err as Error).message}`);
   }
   const checkId = `cense-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${randomUUID().slice(0, 8)}`;
   let result;
   try {
-    result = await verifyClaim(agent, { checkId, claim: trimmed, evidence }, startedAt);
+    result = await verifyClaim(verifyAgent, { checkId, claim: trimmed, evidence }, startedAt);
   } catch (err) {
-    throw new Error(`phase=verify: ${(err as Error).message}`);
+    const msg = (err as Error).message;
+    if (opts.fast && /429|rate limit/i.test(msg)) {
+      result = await verifyClaim(searchAgent, { checkId, claim: trimmed, evidence }, startedAt);
+    } else {
+      throw new Error(`phase=verify: ${msg}`);
+    }
   }
   const receiptHash = receiptHashOf(result);
   return { ...result, receiptHash };
