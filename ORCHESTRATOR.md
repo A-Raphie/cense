@@ -38,14 +38,23 @@ Event: Celo "Agents at Work" (https://celoplatform.notion.site/Agents-at-Work-Ha
 | lemmaly/invariant-guard/mathguard | 3 | 🔍 | no non-trivial algorithms in scope yet; revisit if receipt-anchor batching gets clever |
 | talk-to-users | 1 | 🔍 | 8-day window + mainnet micro-price product; distribution = X + agent-callable API |
 
-## Stage gate (current: 3)
+## Stage gate (current: 3 → 4 boundary)
 - [x] Spike de-risked: x402 402→sign→retry proven (Express local) — Sep 13
-- [x] Engine LIVE: Groq gpt-oss-120b + browser_search → strict sourced verdicts (Eiffel VERIFIED / coffee REFUTED, 22-30s, 429 pacing auto) — Sep 13
-- [x] Serverless port LIVE: Hono + @x402/hono on Next 16 catch-all; production build green; **deployed https://cense-lake.vercel.app — live 402 + payment-required header verified** — Sep 13
-- [x] Gotchas solved: facilitator port 8787 squatter (use 8913+), bun honors localhost interception (use 127.0.0.1), toDataSuffix(tag) RETURNS suffix to append, Hono middleware sees full path (no basePath with x402 RoutesConfig), dep must live in cense/package.json (parent root node_modules trap)
-- [ ] ERC-8004 mint (script ready `scripts/mint-8004.ts`, HARD-GATED on ATTRIBUTION_TAG; needs agent wallet USDT) — after funding + registration
-- [ ] Registration → attributionTag → wire toDataSuffix into EVERY tx path
-- [ ] First tagged tx + verifyTx decode check
-- [ ] UI family: design-direction + winsznx genome + ui-craft (landing + /app instrument)
-- [ ] Settle proof: needs funded buyer USDC + X402_API_KEY (free credits on new account)
-- [ ] Raphie gates QUEUED: ① fund wallets (buyer 0xCE7f…6f72 ~$2 USDC; agent 0x2f7c…9A54 ~$2 USDT) ② x402.celo.org API key ③ Telegram handle ④ Google sign-in
+- [x] Engine LIVE: Groq gpt-oss-120b + browser_search → strict sourced verdicts — Sep 13
+- [x] Serverless port LIVE: Hono + @x402/hono on Next 16; **https://cense-lake.vercel.app** — Sep 13
+- [x] UI family BUILT + deployed (Sep 14): Mode K ticket-and-stub genome; THE CLAIM STUB signature; landing 6-chunk; /app counter instrument; house checks; chain-read ledger; metadata + OG + icons + 404/error/loading; states verified live in IAB (skeleton/disabled/error all exercised)
+- [x] Production hardening: fast-budget engine (15s calls, bounded retries, 50s deadline), phase instrumentation, visitor-safe error mapping; Vercel env vars GROQ_API_KEY + AGENT_WALLET_ADDRESS set
+- [⚠] **Groq TPD exhausted (Sep 14)**: shared free key hit 200K tokens/day (199,040 used) — live checks 422 with honest "daily budget" copy until reset. FIX = fresh dedicated Groq key (his 2-min job) → vercel env add + redeploy. NOT a code bug; the 402 rail, engine logic, UI all proven.
+- [ ] Raphie gates QUEUED: ① fresh Groq key (or wait for TPD reset) ② fund wallets (buyer 0xCE7f…6f72 ~$2 USDC; agent 0x2f7c…9A54 ~$2 USDT) ③ x402.celo.org API key ④ Telegram handle ⑤ Google sign-in
+- [ ] After gates: live happy-path check → register → tag → mint 8004 → first tagged tx → x402 settle proof → X post draft
+- [ ] Sep 19-20: mock-hunter + claims-verify + ship-rehearsal + README honesty table + submission package
+- [ ] Sep 21: submission publish (notify-gate → his click)
+
+## Gotchas learned (build log)
+- bun fetch honors a localhost interception (use 127.0.0.1); port 8787 squatted on this Mac
+- toDataSuffix(tag) RETURNS the suffix to append to calldata (not a 2-arg wrap)
+- Hono middleware sees FULL path — x402 RoutesConfig keys must carry the /api prefix; no basePath
+- Next 16 reverts tsconfig target to ES2017 — use BigInt() calls, not literals
+- Vercel env add CLI: pipe value via stdin, ONE environment per call
+- Groq free tier: TPD 200K/day (not just TPM) — browser_search calls cost ~1K tokens each; 429 retry hints can be 30s+ and will eat a serverless function window if retries are unbounded
+- IAB fullPage screenshots loop on short pages (stitcher artifact); capture per-viewport; hidden-pane visibility toggle fixes "capture failed for guest"

@@ -33,3 +33,11 @@ No em dashes. No buzzwords. Buttons are verbs with objects. One line per element
 
 ## Avoid-list
 Gradients · glassmorphism · shadows on light stock · mono display · emoji icons · purple/blue · bento grids · sparse wireframe · mascots · stock photos · fade-in-up loops · dead links · second header bar · duplicate CTA · stacked end-margins (compact tail: closer 64, footer 24) · purple-to-blue anything · universa rounded-2xl.
+
+## Folds used (ui-craft Step 2 memory)
+- Landing hero: split 7/5 — copy left, framed SPECIMEN stub right (labeled honestly). Sacrifice: no giant-type full-bleed hero (instrument-first reads more honest than louder).
+- Mechanism: numbered 01-04 list 7fr + loop-panel aside 4fr, top-aligned (stretch-void fixed after first render). Money-moment link folded into aside, NOT a second big CTA.
+- Can/cannot: two-col yes/no panels with semantic ink micro labels.
+- Proof: chain-read ledger table (empty state teaches + one action).
+- /app: counter-window fold — ONE full-width instrument, stub tears below, visit ledger as band. Sacrifice: no persistent side ledger (counter metaphor wins; ledger lives below).
+- chrome: one header row everywhere; mobile gets a plain second nav row (not a hamburger) — his one-header-row law kept on desktop, mobile gets visibility instead of a dead menu.
