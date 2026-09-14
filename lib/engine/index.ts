@@ -1,8 +1,9 @@
 import { createHash, randomUUID } from "node:crypto";
 import { Agent } from "./agent";
 import { gatherEvidence } from "./search";
+import { geminiSearch } from "./search-gemini";
 import { verifyClaim } from "./verify";
-import type { CheckResult } from "./types";
+import type { CheckResult, Evidence } from "./types";
 
 export { Agent, AgentError } from "./agent";
 export { gatherEvidence } from "./search";
@@ -50,9 +51,21 @@ export async function checkClaim(
     verifyAgent = new Agent();
   }
 
-  let evidence;
+  let evidence: Evidence[];
   try {
-    evidence = await gatherEvidence(searchAgent, trimmed);
+    // primary search rail: Gemini + native Google Search grounding (free tier,
+    // own quota — independent of the fleet's Groq buckets). Groq 20b stays as
+    // the fallback rail; browser_search is a Groq-only capability.
+    if (opts.fast && process.env.GEMINI_API_KEY) {
+      try {
+        evidence = await geminiSearch(trimmed, process.env.GEMINI_API_KEY);
+      } catch (gemErr) {
+        console.error(`  gemini search failed, falling back to groq: ${(gemErr as Error).message}`);
+        evidence = await gatherEvidence(searchAgent, trimmed);
+      }
+    } else {
+      evidence = await gatherEvidence(searchAgent, trimmed);
+    }
   } catch (err) {
     throw new Error(`phase=search: ${(err as Error).message}`);
   }
