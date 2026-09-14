@@ -1,26 +1,231 @@
 @import "tailwindcss";
 
+/* ============================================================
+   CENSE TOKENS — the ONLY place raw values may live.
+   Genome: winsznx Mode K ticket-and-stub. Reference: celo.org
+   (hexes mined live Sep 13, 2026: #fcff52 x9, #fcf6f1, #e7e3d4,
+   #655947). Contract: design.md.
+   ============================================================ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Elevation ladder — counter field < white stock < manila back < overlay */
+  --bg-base: #fcf6f1;        /* celo.org ivory: the counter field */
+  --bg-surface: #ffffff;     /* ticket stock: white document surfaces */
+  --bg-subtle: #e7e3d4;      /* celo.org manila: stub backs, muted insets */
+  --bg-overlay: #ffffff;     /* same stock, elevated by ring, not shadow */
+  --bg-stock: #fcff52;       /* celo.org chartreuse: ticket stock ONLY, black ink on it */
+
+  /* Text tiers — exactly three */
+  --text-primary: #151310;
+  --text-secondary: #655947; /* celo.org brown-gray: warm ink-2 */
+  --text-muted: #8a8071;
+
+  /* Border scale — two + grid rule */
+  --border-default: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.15);
+  --border-rule: rgba(0, 0, 0, 0.14); /* 1px grid lines in the app ledger */
+
+  /* Accent triple — accent is STOCK yellow (underlay, never text);
+     actions are ink buttons per light-first fintech discipline */
+  --accent: #fcff52;
+  --accent-subtle: rgba(252, 255, 82, 0.35);
+  --accent-foreground: #151310;
+
+  /* Status scale — computed for AA on ivory; labels + glyphs ALWAYS accompany */
+  --status-success: #1f7a3d;      /* VERIFIED / supported */
+  --status-success-bg: rgba(31, 122, 61, 0.08);
+  --status-error: #b3261e;        /* REFUTED / contradicted */
+  --status-error-bg: rgba(179, 38, 30, 0.07);
+  --status-neutral: #655947;      /* UNVERIFIABLE */
+  --status-neutral-bg: rgba(101, 89, 71, 0.08);
+  --status-pending: #8a6a1f;      /* settling */
+
+  /* RGB twins for opacity modifiers */
+  --accent-rgb: 252 255 82;
+  --ink-rgb: 21 19 16;
+
+  /* Radius — ticket stock is sharp; controls soften; pills round */
+  --radius-card: 2px;    /* K: stock reads as printed ticket, not SaaS card */
+  --radius-input: 6px;
+  --radius-pill: 999px;
+
+  /* Type roles */
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  /* Rhythm — one scale (count v3 lesson: uneven rhythm reads as jampacked) */
+  --space-section: 96px;
+  --space-col: 16px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-base: var(--bg-base);
+  --color-surface: var(--bg-surface);
+  --color-subtle: var(--bg-subtle);
+  --color-stock: var(--bg-stock);
+  --color-ink: var(--text-primary);
+  --color-ink-2: var(--text-secondary);
+  --color-ink-3: var(--text-muted);
+  --color-line: var(--border-default);
+  --color-line-strong: var(--border-strong);
+  --color-rule: var(--border-rule);
+  --color-ok: var(--status-success);
+  --color-bad: var(--status-error);
+  --color-meh: var(--status-neutral);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --radius-card: var(--radius-card);
+  --radius-input: var(--radius-input);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ---------- kit class layer ---------- */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: var(--bg-stock);
+    color: var(--accent-foreground);
+  }
+  :focus-visible {
+    outline: 3px solid var(--text-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-input);
+  }
+  section[id] {
+    scroll-margin-top: 84px;
+  }
+  [data-reduce-motion] *,
+  [data-reduce-motion] *::before,
+  [data-reduce-motion] *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* micro label — the ticket-print voice */
+  .micro {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px; /* touch target floor */
+    padding: 0 20px;
+    border-radius: var(--radius-input);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition:
+      transform 120ms ease-out,
+      background-color 120ms ease-out,
+      border-color 120ms ease-out;
+    text-decoration: none;
+  }
+  .btn:active {
+    transform: scale(0.96);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .btn-primary {
+    background: var(--text-primary);
+    color: var(--bg-base);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #000000;
+  }
+  .btn-stock {
+    background: var(--bg-stock);
+    color: var(--accent-foreground);
+    border-color: rgba(0, 0, 0, 0.12);
+  }
+  .btn-stock:hover:not(:disabled) {
+    filter: brightness(0.96);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--bg-surface);
+  }
+
+  .panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-card);
+  }
+
+  .field {
+    width: 100%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-input);
+    padding: 14px 16px;
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--text-primary);
+    transition: border-color 120ms ease-out;
+  }
+  .field::placeholder {
+    color: var(--text-muted);
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--text-primary);
+  }
+  .field[aria-invalid="true"] {
+    border-color: var(--status-error);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-default);
+    background: var(--bg-surface);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  .number-lg {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
 }

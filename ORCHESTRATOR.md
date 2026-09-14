@@ -39,9 +39,13 @@ Event: Celo "Agents at Work" (https://celoplatform.notion.site/Agents-at-Work-Ha
 | talk-to-users | 1 | 🔍 | 8-day window + mainnet micro-price product; distribution = X + agent-callable API |
 
 ## Stage gate (current: 3)
-- [x] Spike de-risked: x402 402→sign→retry proven; settle pending funding + API key
-- [ ] ERC-8004 mint (needs agent wallet gas — funded by Raphie)
+- [x] Spike de-risked: x402 402→sign→retry proven (Express local) — Sep 13
+- [x] Engine LIVE: Groq gpt-oss-120b + browser_search → strict sourced verdicts (Eiffel VERIFIED / coffee REFUTED, 22-30s, 429 pacing auto) — Sep 13
+- [x] Serverless port LIVE: Hono + @x402/hono on Next 16 catch-all; production build green; **deployed https://cense-lake.vercel.app — live 402 + payment-required header verified** — Sep 13
+- [x] Gotchas solved: facilitator port 8787 squatter (use 8913+), bun honors localhost interception (use 127.0.0.1), toDataSuffix(tag) RETURNS suffix to append, Hono middleware sees full path (no basePath with x402 RoutesConfig), dep must live in cense/package.json (parent root node_modules trap)
+- [ ] ERC-8004 mint (script ready `scripts/mint-8004.ts`, HARD-GATED on ATTRIBUTION_TAG; needs agent wallet USDT) — after funding + registration
 - [ ] Registration → attributionTag → wire toDataSuffix into EVERY tx path
 - [ ] First tagged tx + verifyTx decode check
-- [ ] Core: engine (Groq 20b-search/120b-verdict), UI family, /app instrument
-- [ ] Raphie gates queued: fund ≤$5, x402 API key, Google sign-in, X post, publish click
+- [ ] UI family: design-direction + winsznx genome + ui-craft (landing + /app instrument)
+- [ ] Settle proof: needs funded buyer USDC + X402_API_KEY (free credits on new account)
+- [ ] Raphie gates QUEUED: ① fund wallets (buyer 0xCE7f…6f72 ~$2 USDC; agent 0x2f7c…9A54 ~$2 USDT) ② x402.celo.org API key ③ Telegram handle ④ Google sign-in
