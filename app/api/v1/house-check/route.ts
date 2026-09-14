@@ -50,7 +50,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await checkClaim(claim, { fast: true });
+    // overall deadline: the function window is 60s; leave headroom to respond
+    const result = await Promise.race([
+      checkClaim(claim, { fast: true }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("phase=deadline: the checker is busy, try again in a minute")), 50_000),
+      ),
+    ]);
     dailyByIp.set(ip, { date: day, count: (rec?.date === day ? rec.count : 0) + 1 });
     dailyByIp.set("__global__", { date: day, count: globalCount + 1 });
     return NextResponse.json({ ...result, house: true });

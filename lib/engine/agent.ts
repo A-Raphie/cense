@@ -35,6 +35,8 @@ export class Agent {
   private readonly fetchImpl: FetchImpl;
   private readonly callTimeoutMs: number;
   private readonly max429Retries: number;
+  private readonly maxNetworkRetries: number;
+  private readonly maxWaitMs: number;
   readonly usage: UsageSummary = {
     calls: 0,
     promptTokens: 0,
@@ -45,7 +47,7 @@ export class Agent {
   constructor(
     env: NodeJS.ProcessEnv = process.env,
     fetchImpl: FetchImpl = fetch,
-    opts: { callTimeoutMs?: number; max429Retries?: number } = {},
+    opts: { callTimeoutMs?: number; max429Retries?: number; maxNetworkRetries?: number; maxWaitMs?: number } = {},
   ) {
     this.baseUrl = (env.CENSE_BASE_URL || DEFAULT_BASE_URL).replace(/\/+$/, "");
     this.apiKey = env.CENSE_API_KEY || env.GROQ_API_KEY || "";
@@ -55,6 +57,8 @@ export class Agent {
     // serverless budget: routes must finish inside the function window
     this.callTimeoutMs = opts.callTimeoutMs ?? 120_000;
     this.max429Retries = opts.max429Retries ?? 6;
+    this.maxNetworkRetries = opts.maxNetworkRetries ?? 8;
+    this.maxWaitMs = opts.maxWaitMs ?? Infinity;
     if (!this.apiKey) {
       throw new AgentError(
         "CENSE_API_KEY is not set. Cense needs any OpenAI-compatible key. " +
@@ -84,6 +88,7 @@ export class Agent {
         const ra = res.headers.get("retry-after");
         if (ra) waitMs = Math.ceil(parseFloat(ra) * 1000) + 1_000;
       }
+      waitMs = Math.min(waitMs, this.maxWaitMs);
       console.error(`  429 on ${call.label}: pacing ${Math.round(waitMs / 1000)}s (attempt ${attempt + 1}/6)`);
       await new Promise((r) => setTimeout(r, waitMs));
       return this.chatFull(call, attempt + 1);
@@ -128,7 +133,7 @@ export class Agent {
         signal: AbortSignal.timeout(this.callTimeoutMs),
       });
     } catch (err) {
-      if (attempt < 8) {
+      if (attempt < this.maxNetworkRetries) {
         const wait = 5_000;
         console.error(`  network on ${call.label}: retrying in ${wait / 1000}s (attempt ${attempt + 1}/8)`);
         await new Promise((r) => setTimeout(r, wait));

@@ -21,11 +21,26 @@ export async function checkClaim(
   if (trimmed.length < 8) throw new Error("claim too short to check");
   const startedAt = Date.now();
   const agent = opts.fast
-    ? new Agent(undefined, undefined, { callTimeoutMs: 22_000, max429Retries: 2 })
+    ? new Agent(undefined, undefined, {
+        callTimeoutMs: 15_000,
+        max429Retries: 1,
+        maxNetworkRetries: 1,
+        maxWaitMs: 5_000,
+      })
     : new Agent();
-  const evidence = await gatherEvidence(agent, trimmed);
+  let evidence;
+  try {
+    evidence = await gatherEvidence(agent, trimmed);
+  } catch (err) {
+    throw new Error(`phase=search: ${(err as Error).message}`);
+  }
   const checkId = `cense-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${randomUUID().slice(0, 8)}`;
-  const result = await verifyClaim(agent, { checkId, claim: trimmed, evidence }, startedAt);
+  let result;
+  try {
+    result = await verifyClaim(agent, { checkId, claim: trimmed, evidence }, startedAt);
+  } catch (err) {
+    throw new Error(`phase=verify: ${(err as Error).message}`);
+  }
   const receiptHash = receiptHashOf(result);
   return { ...result, receiptHash };
 }
