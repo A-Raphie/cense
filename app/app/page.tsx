@@ -69,11 +69,13 @@ export default function AppPage() {
 
     try {
       let res: Response;
+      const clientAbort = AbortSignal.timeout(70_000); // never hang the skeleton
       if (kind === "house") {
         res = await fetch("/api/v1/house-check", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ claim: claim.trim() }),
+          signal: clientAbort,
         });
       } else {
         if (!wallet) throw new Error("Connect a wallet first.");
@@ -81,6 +83,7 @@ export default function AppPage() {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ claim: claim.trim() }),
+          signal: clientAbort,
         });
       }
 
