@@ -148,24 +148,24 @@ export function Stub({
         >
           {data.house ? (
             <span className="text-ink-2">paid by the house · no wallet needed</span>
-          ) : (
+          ) : data.settlement?.txHash ? (
             <>
               <span className="text-ink-2">
                 paid by {short(data.settlement?.payer)} · $0.01 USDC
               </span>
-              {data.settlement?.txHash ? (
-                <a
-                  href={`https://celoscan.io/tx/${data.settlement.txHash}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline decoration-line underline-offset-2 hover:text-ink"
-                >
-                  {data.settlement.txHash.slice(0, 10)}…{data.settlement.txHash.slice(-6)}
-                </a>
-              ) : (
-                <span className="text-ink-3">settling…</span>
-              )}
+              <a
+                href={`https://celoscan.io/tx/${data.settlement.txHash}`}
+                target="_blank"
+                rel="noreferrer"
+                className="underline decoration-line underline-offset-2 hover:text-ink"
+              >
+                {data.settlement.txHash.slice(0, 10)}…{data.settlement.txHash.slice(-6)}
+              </a>
             </>
+          ) : (
+            <span className="text-ink-2">
+              {data.settlement?.payer ? "settling…" : "specimen · a real stub carries payer, tx, and receipt"}
+            </span>
           )}
           <span className="text-ink-3">receipt {data.receiptHash?.slice(0, 10)}…</span>
         </div>
