@@ -91,7 +91,7 @@ export default function Home() {
       </section>
 
       {/* mechanism — numbered once, flow line carries the loop */}
-      <section style={{ paddingTop: "var(--space-section)" }} className="grid gap-10 lg:grid-cols-[7fr_4fr]">
+      <section style={{ paddingTop: "var(--space-section)" }} className="grid items-start gap-10 lg:grid-cols-[7fr_4fr]">
         <div>
           <h2 className="text-[22px] font-semibold tracking-tight text-ink">How a check runs</h2>
           <ol className="mt-6 space-y-6">
