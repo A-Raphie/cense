@@ -23,7 +23,9 @@ const ANCHORED_EVENT = {
   ],
 };
 
-const WINDOW = BigInt(60_000);
+// free RPCs cap log ranges; 5k blocks per query, 8 windows back (~11h lookback)
+const WINDOW = BigInt(5_000);
+const WINDOWS = 8;
 
 export async function GET() {
   const payTo = process.env.AGENT_WALLET_ADDRESS as `0x${string}` | undefined;
@@ -57,7 +59,7 @@ export async function GET() {
     [USDT, "USDT"],
   ] as const) {
     try {
-      for (let w = BigInt(0); w < BigInt(4); w++) {
+      for (let w = BigInt(0); w < BigInt(WINDOWS); w++) {
         const toBlock = head - w * WINDOW;
         const fromBlock = toBlock - WINDOW + BigInt(1);
         const batch = (await client.getLogs({
@@ -100,7 +102,7 @@ export async function GET() {
     const anchorLogs = (await client.getLogs({
       address: RECEIPT_ANCHOR,
       event: ANCHORED_EVENT,
-      fromBlock: head - WINDOW * BigInt(4),
+      fromBlock: head - WINDOW * BigInt(WINDOWS),
       toBlock: head,
     })) as unknown as Array<{
       blockNumber: bigint | null;
