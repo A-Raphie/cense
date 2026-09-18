@@ -33,7 +33,7 @@ export default function AppPage() {
     try {
       const b = await usdcBalance(addr);
       setWallet({ address: addr, balance: formatUsdc(b) });
-      return Number(b) >= 10_000; // >= $0.01
+      return Number(b) >= 1_000; // >= $0.001
     } catch {
       return false;
     }
@@ -137,7 +137,7 @@ export default function AppPage() {
       </h1>
       <p className="mt-2 max-w-[60ch] text-[15px] leading-relaxed text-ink-2">
         Paste any factual claim below. The first check is on the house, no wallet needed.
-        After that, checks settle for $0.01 of USDC on Celo mainnet, straight from your wallet.
+        After that, checks settle for $0.001 of USDC on Celo mainnet, straight from your wallet.
       </p>
 
       {/* the counter window */}
@@ -176,7 +176,7 @@ export default function AppPage() {
               disabled={!canWalletCheck}
               onClick={() => void runCheck("wallet")}
             >
-              Check · $0.01
+              Check · $0.001
             </button>
           ) : (
             <button className="btn btn-primary" disabled={walletBusy || phase === "searching"} onClick={() => void onConnect()}>

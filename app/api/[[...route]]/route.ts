@@ -11,7 +11,7 @@ export const maxDuration = 60;
 
 const CELO_MAINNET = "eip155:42220";
 const USDC = "0xcEBA9300f2b948710d2653dD7B07f33A8B32118C";
-const PRICE_PER_CHECK = "10000"; // $0.01, 6 decimals
+const PRICE_PER_CHECK = "1000"; // $0.001, 6 decimals
 
 const facilitator = new HTTPFacilitatorClient({
   url: "https://api.x402.celo.org",

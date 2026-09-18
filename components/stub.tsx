@@ -151,7 +151,7 @@ export function Stub({
           ) : data.settlement?.txHash ? (
             <>
               <span className="text-ink-2">
-                paid by {short(data.settlement?.payer)} · $0.01 USDC
+                paid by {short(data.settlement?.payer)} · $0.001 USDC
               </span>
               <a
                 href={`https://celoscan.io/tx/${data.settlement.txHash}`}

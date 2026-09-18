@@ -39,13 +39,13 @@ export async function POST(req: NextRequest) {
 
   if (globalCount >= GLOBAL_DAILY_CAP) {
     return NextResponse.json(
-      { error: "The house is out of checks today. Connect a wallet to check onchain — it settles for $0.01." },
+      { error: "The house is out of checks today. Connect a wallet to check onchain — it settles for $0.001." },
       { status: 429 },
     );
   }
   if (rec?.date === day && rec.count >= MAX_PER_IP_PER_DAY) {
     return NextResponse.json(
-      { error: "Your house checks are spent for today. Connect a wallet to keep checking — $0.01 a check, settled onchain." },
+      { error: "Your house checks are spent for today. Connect a wallet to keep checking — $0.001 a check, settled onchain." },
       { status: 429 },
     );
   }

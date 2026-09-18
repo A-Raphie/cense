@@ -5,9 +5,9 @@ import type { CheckResult } from "@/lib/engine/types";
 import { ProofLedger } from "@/components/proof-ledger";
 
 export const metadata: Metadata = {
-  title: "Cense -- pay a cent, know if it's true",
+  title: "Cense -- pay less than a cent, know if it's true",
   description:
-    "A verification agent on Celo mainnet. Pay $0.01 of USDC over x402, get a sourced verdict with a receipt.",
+    "A verification agent on Celo mainnet. Pay $0.001 of USDC over x402, get a sourced verdict with a receipt.",
 };
 
 /* SPECIMEN: real stub format, real engine field names, honestly labeled. */
@@ -34,7 +34,7 @@ const STEPS = [
   {
     n: "02",
     title: "The meter runs once",
-    body: "x402 prices the check at $0.01 of USDC. Your wallet signs a gasless authorization; the facilitator settles it on Celo mainnet and pays the gas.",
+    body: "x402 prices the check at $0.001 of USDC. Your wallet signs a gasless authorization; the facilitator settles it on Celo mainnet and pays the gas.",
   },
   {
     n: "03",
@@ -59,13 +59,13 @@ export default function Home() {
         <div>
           <p className="micro">a verification agent on celo mainnet</p>
           <h1 className="mt-4 text-[clamp(2.6rem,6vw,4.2rem)] font-semibold leading-[0.98] tracking-[-0.03em] text-ink">
-            Pay a cent.
+            Less than a cent.
             <br />
             <span style={{ opacity: 0.45 }}>Know if it&apos;s true.</span>
           </h1>
           <p className="mt-5 max-w-[56ch] text-[17px] leading-relaxed text-ink-2">
             Cense checks claims against live sources and returns a verdict with its evidence.
-            Each check costs $0.01 of USDC, settled onchain in about a second.
+            Each check costs $0.001 of USDC, settled onchain in about a second.
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-4">
             <Link href="/app" className="btn btn-primary">
@@ -165,7 +165,7 @@ export default function Home() {
           {[
             {
               q: "Why pay for a fact check?",
-              a: "Free answers have no cost when they are wrong. The $0.01 makes spam uneconomic, pays for real searches, and buys a receipt: payer, payee, price, and proof that a specific agent staked its identity on the answer.",
+              a: "Free answers have no cost when they are wrong. The $0.001 price makes spam uneconomic, pays for real searches, and buys a receipt: payer, payee, price, and proof that a specific agent staked its identity on the answer.",
             },
             {
               q: "What if the verdict is wrong?",
@@ -177,7 +177,7 @@ export default function Home() {
             },
             {
               q: "Can other software use this?",
-              a: "That is the point. The instrument at /app is one client of a plain x402 endpoint. Any agent with an x402 client can call it, settle the same $0.01, and get the same JSON verdict.",
+              a: "That is the point. The instrument at /app is one client of a plain x402 endpoint. Any agent with an x402 client can call it, settle the same $0.001, and get the same JSON verdict.",
             },
           ].map((f) => (
             <div key={f.q} className="border-t pt-4" style={{ borderColor: "var(--border-rule)" }}>
@@ -194,10 +194,10 @@ export default function Home() {
         style={{ marginTop: "var(--space-section)", paddingBottom: 64 }}
       >
         <p className="text-[18px] font-medium text-ink">
-          Bring a claim you have doubted. <span style={{ opacity: 0.45 }}>It costs a cent to stop wondering.</span>
+          Bring a claim you have doubted. <span style={{ opacity: 0.45 }}>It costs a tenth of a cent to stop wondering.</span>
         </p>
         <Link href="/app" className="btn btn-stock">
-          Check a claim · $0.01
+          Check a claim · $0.001
         </Link>
       </section>
     </div>

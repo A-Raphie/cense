@@ -18,7 +18,7 @@ for (const line of readFileSync(join(here, "..", ".env"), "utf8").split("\n")) {
 
 const CELO_MAINNET = "eip155:42220";
 const USDC = "0xcEBA9300f2b948710d2653dD7B07f33A8B32118C";
-const PRICE_PER_CHECK = "10000"; // $0.01, 6 decimals
+const PRICE_PER_CHECK = "1000"; // $0.001, 6 decimals
 
 if (!process.env.AGENT_WALLET_ADDRESS) throw new Error("AGENT_WALLET_ADDRESS missing in .env");
 

@@ -1,7 +1,7 @@
 {
   "type": "https://eips.ethereum.org/EIPS/eip-8004#agent.json-v1",
   "name": "Cense",
-  "description": "Sense, priced in cents. A verification agent on Celo mainnet: pay a few cents of USDC over x402, get a sourced fact-check verdict.",
+  "description": "Sense, priced in cents. A verification agent on Celo mainnet: pay $0.001 of USDC over x402, get a sourced fact-check verdict.",
   "image": "https://trycense.com/icon.png",
   "endpoints": {
     "x402": "https://trycense.com/api/v1/check"

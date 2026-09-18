@@ -4,7 +4,7 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         <div className="flex flex-col justify-between gap-2 border-t border-line pt-6 text-[13px] text-ink-2 sm:flex-row sm:items-center">
           <p>
-            Cense · settles on Celo mainnet · reading is free, checking costs $0.01
+            Cense · settles on Celo mainnet · reading is free, checking costs $0.001
           </p>
           <p>
             built by{" "}

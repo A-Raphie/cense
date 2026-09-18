@@ -18,22 +18,22 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://cense-lake.vercel.app"),
-  title: "Cense -- pay a cent, know if it's true",
+  title: "Cense -- pay less than a cent, know if it's true",
   description:
-    "A verification agent on Celo mainnet. Hand it a claim, pay $0.01 of USDC over x402, get a sourced verdict: VERIFIED, REFUTED, or UNVERIFIABLE. Every check leaves a receipt.",
+    "A verification agent on Celo mainnet. Hand it a claim, pay $0.001 of USDC over x402, get a sourced verdict: VERIFIED, REFUTED, or UNVERIFIABLE. Every check leaves a receipt.",
   openGraph: {
-    title: "Cense -- pay a cent, know if it's true",
+    title: "Cense -- pay less than a cent, know if it's true",
     description:
-      "A verification agent on Celo mainnet. Pay $0.01 of USDC over x402, get a sourced verdict with a receipt.",
+      "A verification agent on Celo mainnet. Pay $0.001 of USDC over x402, get a sourced verdict with a receipt.",
     url: "https://cense-lake.vercel.app",
     siteName: "Cense",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Cense -- pay a cent, know if it's true",
+    title: "Cense -- pay less than a cent, know if it's true",
     description:
-      "A verification agent on Celo mainnet. Pay $0.01 of USDC over x402, get a sourced verdict with a receipt.",
+      "A verification agent on Celo mainnet. Pay $0.001 of USDC over x402, get a sourced verdict with a receipt.",
   },
   robots: { index: true, follow: true },
 };
