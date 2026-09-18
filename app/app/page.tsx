@@ -236,7 +236,7 @@ export default function AppPage() {
         </h2>
         <p className="mt-2 text-[14px] leading-relaxed text-ink-2">
           The instrument above is a wallet in front of one x402 endpoint. Your agent points
-          its x402 client at the same URL and settles the same $0.01, no account, no API key.
+          its x402 client at the same URL and settles the same $0.001, no account, no API key.
         </p>
         <pre
           className="mt-3 overflow-x-auto p-4 font-mono text-[12px] leading-relaxed text-ink"
