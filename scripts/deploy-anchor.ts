@@ -27,7 +27,7 @@ const celoPlain = defineChain({
   blockExplorers: { default: { name: "Celoscan", url: "https://celoscan.io" } },
 });
 
-const tag = process.env.ATTRIBUTION_TAG;
+const tag = process.env.ATTRIBUTION_TAG as string;
 if (!tag) throw new Error("ATTRIBUTION_TAG missing");
 
 const source = readFileSync(join(here, "..", "contracts", "ReceiptAnchor.sol"), "utf8");

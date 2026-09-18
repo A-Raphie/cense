@@ -5,11 +5,25 @@ import { celo } from "viem/chains";
 export const runtime = "nodejs";
 export const revalidate = 30;
 
-/* The ledger IS the chain: USDC Transfer logs landing on the agent's payTo
- * address ARE the settled checks (x402 settlements move tokens payer -> payee
- * directly inside the token contract). Keyless, free, honest. */
+/* The ledger IS the chain: stablecoin Transfer logs landing on the agent's
+ * payTo address ARE the settled checks (x402 settlements move tokens payer →
+ * payee directly inside the token contract). Anchored verdict receipts come
+ * from the ReceiptAnchor contract. Keyless, free, honest. */
 
 const USDC = "0xcEBA9300f2b948710d2653dD7B07f33A8B32118C" as const;
+const USDT = "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e" as const;
+const RECEIPT_ANCHOR = (process.env.NEXT_PUBLIC_ANCHOR_ADDRESS ??
+  "0x2f3e570b31daaad23e8f7a9cb10866db207238a7") as `0x${string}`;
+const ANCHORED_EVENT = {
+  type: "event" as const,
+  name: "Anchored",
+  inputs: [
+    { name: "receiptHash", type: "bytes32", indexed: true },
+    { name: "blockNumber", type: "uint256", indexed: true },
+  ],
+};
+
+const WINDOW = BigInt(60_000);
 
 export async function GET() {
   const payTo = process.env.AGENT_WALLET_ADDRESS as `0x${string}` | undefined;
@@ -18,72 +32,102 @@ export async function GET() {
       ready: false,
       note: "agent wallet not configured yet; settlements appear here once it is",
       checks: [],
+      receipts: [],
       total: 0,
     });
   }
 
-  try {
-    const client = createPublicClient({ chain: celo, transport: http("https://forno.celo.org") });
-    const head = await client.getBlockNumber();
-    // forno serves bounded ranges; 60k blocks (~17h at 1s blocks) per query,
-    // walk back up to 4 windows and stop at the first hit.
-    const WINDOW = BigInt(60_000);
-    let logs: Array<{
-      blockNumber: bigint | null;
-      args?: { from?: string; value?: bigint };
-      transactionHash?: string;
-    }> = [];
-    for (let w = BigInt(0); w < BigInt(4); w++) {
-      const toBlock = head - w * WINDOW;
-      const fromBlock = toBlock - WINDOW + BigInt(1);
-      const batch = (await client.getLogs({
-        address: USDC,
-        event: {
-          type: "event",
-          name: "Transfer",
-          inputs: [
-            { name: "from", type: "address", indexed: true },
-            { name: "to", type: "address", indexed: true },
-            { name: "value", type: "uint256", indexed: false },
-          ],
-        },
-        args: { to: payTo },
-        fromBlock,
-        toBlock,
-      })) as unknown as Array<{
-        blockNumber: bigint | null;
-        args?: { from?: string; value?: bigint };
-        transactionHash?: string;
-      }>;
-      logs = logs.concat(batch);
-      if (logs.length >= 8) break;
+  const client = createPublicClient({ chain: celo, transport: http("https://forno.celo.org") });
+  const head = await client.getBlockNumber();
+  // forno serves bounded ranges; 60k blocks (~17h at 1s blocks) per query,
+  // walk back up to 4 windows. Both settlement tokens count.
+  let degraded = false;
+  const transfers: Array<{
+    txHash?: string;
+    payer?: string;
+    cents?: number;
+    token?: string;
+    block?: number;
+  }> = [];
+  for (const [tokenAddr, symbol] of [
+    [USDC, "USDC"],
+    [USDT, "USDT"],
+  ] as const) {
+    try {
+      for (let w = BigInt(0); w < BigInt(4); w++) {
+        const toBlock = head - w * WINDOW;
+        const fromBlock = toBlock - WINDOW + BigInt(1);
+        const batch = (await client.getLogs({
+          address: tokenAddr,
+          event: {
+            type: "event",
+            name: "Transfer",
+            inputs: [
+              { name: "from", type: "address", indexed: true },
+              { name: "to", type: "address", indexed: true },
+              { name: "value", type: "uint256", indexed: false },
+            ],
+          },
+          args: { to: payTo },
+          fromBlock,
+          toBlock,
+        })) as unknown as Array<{
+          blockNumber: bigint | null;
+          args?: { from?: string; value?: bigint };
+          transactionHash?: string;
+        }>;
+        for (const l of batch) {
+          transfers.push({
+            txHash: l.transactionHash,
+            payer: l.args?.from,
+            cents: Number(l.args?.value ?? BigInt(0)) / 1e4 / 100,
+            token: symbol,
+            block: Number(l.blockNumber ?? BigInt(0)),
+          });
+        }
+      }
+    } catch {
+      degraded = true;
     }
-
-    const seen = new Set<string>();
-    const checks = logs
-      .filter((l) => {
-        const h = l.transactionHash ?? "";
-        if (!h || seen.has(h)) return false;
-        seen.add(h);
-        return true;
-      })
-      .sort((a, b) => Number(b.blockNumber ?? BigInt(0)) - Number(a.blockNumber ?? BigInt(0)))
-      .slice(0, 12)
-      .map((l) => ({
-        txHash: l.transactionHash,
-        payer: l.args?.from,
-        cents: Number(l.args?.value ?? BigInt(0)) / 1e4 / 100,
-        block: Number(l.blockNumber ?? BigInt(0)),
-      }));
-
-    return NextResponse.json(
-      { ready: true, checks, total: logs.length },
-      { headers: { "cache-control": "public, s-maxage=30, stale-while-revalidate=60" } },
-    );
-  } catch {
-    return NextResponse.json(
-      { ready: true, checks: [], total: 0, degraded: true },
-      { status: 200 },
-    );
   }
+
+  // anchored verdict receipts
+  let receipts: Array<{ receiptHash: string; block: number; txHash?: string }> = [];
+  try {
+    const anchorLogs = (await client.getLogs({
+      address: RECEIPT_ANCHOR,
+      event: ANCHORED_EVENT,
+      fromBlock: head - WINDOW * BigInt(4),
+      toBlock: head,
+    })) as unknown as Array<{
+      blockNumber: bigint | null;
+      args?: { receiptHash?: string };
+      transactionHash?: string;
+    }>;
+    receipts = anchorLogs
+      .map((l) => ({
+        receiptHash: (l.args?.receiptHash ?? "").slice(0, 18) + "…",
+        block: Number(l.blockNumber ?? BigInt(0)),
+        txHash: l.transactionHash,
+      }))
+      .slice(0, 12);
+  } catch {
+    degraded = true;
+  }
+
+  const seen = new Set<string>();
+  const checks = transfers
+    .filter((t) => {
+      const h = t.txHash ?? "";
+      if (!h || seen.has(h)) return false;
+      seen.add(h);
+      return true;
+    })
+    .sort((a, b) => (b.block ?? 0) - (a.block ?? 0))
+    .slice(0, 12);
+
+  return NextResponse.json(
+    { ready: true, checks, receipts, total: transfers.length, degraded },
+    { headers: { "cache-control": "public, s-maxage=30, stale-while-revalidate=60" } },
+  );
 }

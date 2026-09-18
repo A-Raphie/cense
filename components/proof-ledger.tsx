@@ -13,6 +13,7 @@ interface LedgerCheck {
 interface LedgerPayload {
   ready: boolean;
   checks: LedgerCheck[];
+  receipts: Array<{ receiptHash: string; block: number; txHash?: string }>;
   total: number;
   degraded?: boolean;
   note?: string;
@@ -122,6 +123,30 @@ export function ProofLedger() {
       </table>
       {data.total > data.checks.length ? (
         <p className="mt-2 font-mono text-[12px] text-ink-3">+{data.total - data.checks.length} more in this window</p>
+      ) : null}
+
+      {data.receipts.length > 0 ? (
+        <div className="mt-8">
+          <span className="micro">anchored verdict receipts</span>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {data.receipts.map((r) => (
+              <a
+                key={r.receiptHash + String(r.block)}
+                href={r.txHash ? `https://celoscan.io/tx/${r.txHash}` : "#"}
+                target="_blank"
+                rel="noreferrer"
+                className="chip hover:text-ink"
+                title={`anchored at block ${r.block}`}
+                style={{ fontVariantNumeric: "tabular-nums" }}
+              >
+                {r.receiptHash} · block {r.block}
+              </a>
+            ))}
+          </div>
+          <p className="mt-2 text-[13px] text-ink-3">
+            Each chip is a receipt hash written to the ReceiptAnchor contract; the verdict it proves is in the stub.
+          </p>
+        </div>
       ) : null}
     </div>
   );
