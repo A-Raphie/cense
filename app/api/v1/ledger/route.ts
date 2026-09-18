@@ -37,7 +37,10 @@ export async function GET() {
     });
   }
 
-  const client = createPublicClient({ chain: celo, transport: http("https://forno.celo.org") });
+  const client = createPublicClient({
+    chain: celo,
+    transport: http(process.env.LEDGER_RPC_URL ?? "https://celo-rpc.publicnode.com"),
+  });
   const head = await client.getBlockNumber();
   // forno serves bounded ranges; 60k blocks (~17h at 1s blocks) per query,
   // walk back up to 4 windows. Both settlement tokens count.
