@@ -24,8 +24,8 @@ const ANCHORED_EVENT = {
 };
 
 // free RPCs cap log ranges; 5k blocks per query, 8 windows back (~11h lookback)
-const WINDOW = BigInt(5_000);
-const WINDOWS = 8;
+const WINDOW = BigInt(4_000);
+const WINDOWS = 6;
 
 export async function GET() {
   const payTo = process.env.AGENT_WALLET_ADDRESS as `0x${string}` | undefined;
@@ -41,7 +41,7 @@ export async function GET() {
 
   const client = createPublicClient({
     chain: celo,
-    transport: http(process.env.LEDGER_RPC_URL ?? "https://celo-rpc.publicnode.com"),
+    transport: http(process.env.LEDGER_RPC_URL ?? "https://forno.celo.org"),
   });
   const head = await client.getBlockNumber();
   // forno serves bounded ranges; 60k blocks (~17h at 1s blocks) per query,
@@ -94,7 +94,7 @@ export async function GET() {
       }
     } catch (err) {
       degraded = true;
-      degradedReason = String(err).slice(0, 200);
+      degradedReason = String(err).slice(0, 1600);
     }
   }
 
@@ -131,7 +131,7 @@ export async function GET() {
       .slice(0, 12);
   } catch (err) {
     degraded = true;
-    degradedReason = String(err).slice(0, 200);
+    degradedReason = String(err).slice(0, 1600);
   }
 
   const seen = new Set<string>();
