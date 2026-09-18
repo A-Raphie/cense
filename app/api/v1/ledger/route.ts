@@ -47,6 +47,7 @@ export async function GET() {
   // forno serves bounded ranges; 60k blocks (~17h at 1s blocks) per query,
   // walk back up to 4 windows. Both settlement tokens count.
   let degraded = false;
+  let degradedReason = "";
   const transfers: Array<{
     txHash?: string;
     payer?: string;
@@ -91,8 +92,9 @@ export async function GET() {
           });
         }
       }
-    } catch {
+    } catch (err) {
       degraded = true;
+      degradedReason = String(err).slice(0, 200);
     }
   }
 
@@ -127,8 +129,9 @@ export async function GET() {
         txHash: l.transactionHash,
       }))
       .slice(0, 12);
-  } catch {
+  } catch (err) {
     degraded = true;
+    degradedReason = String(err).slice(0, 200);
   }
 
   const seen = new Set<string>();
@@ -143,7 +146,7 @@ export async function GET() {
     .slice(0, 12);
 
   return NextResponse.json(
-    { ready: true, checks, receipts, total: transfers.length, degraded },
+    { ready: true, checks, receipts, total: transfers.length, degraded, degradedReason },
     { headers: { "cache-control": "public, s-maxage=30, stale-while-revalidate=60" } },
   );
 }
