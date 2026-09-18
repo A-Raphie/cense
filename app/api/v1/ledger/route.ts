@@ -99,16 +99,27 @@ export async function GET() {
   // anchored verdict receipts
   let receipts: Array<{ receiptHash: string; block: number; txHash?: string }> = [];
   try {
-    const anchorLogs = (await client.getLogs({
-      address: RECEIPT_ANCHOR,
-      event: ANCHORED_EVENT,
-      fromBlock: head - WINDOW * BigInt(WINDOWS),
-      toBlock: head,
-    })) as unknown as Array<{
+    const anchorLogs: Array<{
       blockNumber: bigint | null;
       args?: { receiptHash?: string };
       transactionHash?: string;
-    }>;
+    }> = [];
+    for (let w = BigInt(0); w < BigInt(WINDOWS); w++) {
+      const toBlock = head - w * WINDOW;
+      const fromBlock = toBlock - WINDOW + BigInt(1);
+      const batch = (await client.getLogs({
+        address: RECEIPT_ANCHOR,
+        event: ANCHORED_EVENT,
+        fromBlock,
+        toBlock,
+      })) as unknown as Array<{
+        blockNumber: bigint | null;
+        args?: { receiptHash?: string };
+        transactionHash?: string;
+      }>;
+      anchorLogs.push(...batch);
+      if (anchorLogs.length >= 12) break;
+    }
     receipts = anchorLogs
       .map((l) => ({
         receiptHash: (l.args?.receiptHash ?? "").slice(0, 18) + "…",
