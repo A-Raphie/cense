@@ -59,10 +59,10 @@ export async function GET() {
     [USDC, "USDC"],
     [USDT, "USDT"],
   ] as const) {
-    try {
-      for (let w = BigInt(0); w < BigInt(WINDOWS); w++) {
-        const toBlock = head - w * WINDOW;
-        const fromBlock = toBlock - WINDOW + BigInt(1);
+    for (let w = BigInt(0); w < BigInt(WINDOWS); w++) {
+      const toBlock = head - w * WINDOW;
+      const fromBlock = toBlock - WINDOW + BigInt(1);
+      try {
         const batch = (await client.getLogs({
           address: tokenAddr,
           event: {
@@ -91,10 +91,12 @@ export async function GET() {
             block: Number(l.blockNumber ?? BigInt(0)),
           });
         }
+      } catch (err) {
+        // deep windows can exceed the RPC's archive depth: keep what we have
+        degraded = true;
+        degradedReason = `w=${w}: ` + String(err).slice(0, 300);
+        break;
       }
-    } catch (err) {
-      degraded = true;
-      degradedReason = String(err).slice(0, 1600);
     }
   }
 
@@ -130,8 +132,7 @@ export async function GET() {
       }))
       .slice(0, 12);
   } catch (err) {
-    degraded = true;
-    degradedReason = String(err).slice(0, 1600);
+    degradedReason = "receipts: " + String(err).slice(0, 300);
   }
 
   const seen = new Set<string>();
