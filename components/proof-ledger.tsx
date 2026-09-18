@@ -102,7 +102,7 @@ export function ProofLedger() {
             <tr key={c.txHash} className="border-b" style={{ borderColor: "var(--border-rule)" }}>
               <td className="py-2 pr-4 font-mono text-[12px] text-ink-2">{c.block}</td>
               <td className="py-2 pr-4 font-mono text-[12px] text-ink-2">{short(c.payer)}</td>
-              <td className="py-2 pr-4 text-ink">${(c.cents ?? 0).toFixed(2)}</td>
+              <td className="py-2 pr-4 text-ink">{(() => { const d = c.cents ?? 0; return `$${d > 0 && d < 0.01 ? d.toFixed(3) : d.toFixed(2)}`; })()}</td>
               <td className="py-2">
                 {c.txHash ? (
                   <a
