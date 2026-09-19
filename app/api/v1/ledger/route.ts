@@ -59,8 +59,7 @@ export async function GET() {
     [USDC, "USDC"],
     [USDT, "USDT"],
   ] as const) {
-    for (let w = BigInt(0); w < BigInt(WINDOWS); w++) {
-      const toBlock = head - w * WINDOW;
+    for (let toBlock = head; toBlock >= BigInt(Number(START_BLOCK)); toBlock -= WINDOW) {
       const fromBlock = toBlock - WINDOW + BigInt(1);
       try {
         const batch = (await client.getLogs({
@@ -108,8 +107,7 @@ export async function GET() {
       args?: { receiptHash?: string };
       transactionHash?: string;
     }> = [];
-    for (let w = BigInt(0); w < BigInt(WINDOWS); w++) {
-      const toBlock = head - w * WINDOW;
+    for (let toBlock = head; toBlock >= BigInt(Number(START_BLOCK)); toBlock -= WINDOW) {
       const fromBlock = toBlock - WINDOW + BigInt(1);
       const batch = (await client.getLogs({
         address: RECEIPT_ANCHOR,
