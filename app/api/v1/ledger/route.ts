@@ -23,9 +23,10 @@ const ANCHORED_EVENT = {
   ],
 };
 
-// free RPCs cap log ranges; 5k blocks per query, 8 windows back (~11h lookback)
+// free RPCs cap log ranges; 4k blocks per query, walking back to the project's
+// first block (the ReceiptAnchor deploy) so all hackathon history stays queryable
 const WINDOW = BigInt(4_000);
-const WINDOWS = 6;
+const START_BLOCK = 77840440n;
 
 export async function GET() {
   const payTo = process.env.AGENT_WALLET_ADDRESS as `0x${string}` | undefined;
@@ -93,7 +94,7 @@ export async function GET() {
       } catch (err) {
         // deep windows can exceed the RPC's archive depth: keep what we have
         degraded = true;
-        degradedReason = `w=${w}: ` + String(err).slice(0, 300);
+        degradedReason = `: ` + String(err).slice(0, 300);
         break;
       }
     }
