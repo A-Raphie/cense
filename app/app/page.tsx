@@ -106,6 +106,9 @@ export default function AppPage() {
         house: kind === "house",
         settlement: kind === "wallet" ? { payer: wallet?.address, txHash } : undefined,
       };
+      // the verdict beat the clock: kill the phase timers or the skeleton
+      // resurrects above the finished stub at the 8s/16s marks
+      timers.current.forEach(clearTimeout);
       setResult(stub);
       setPhase("done");
       setVisit((v) => [
@@ -122,6 +125,7 @@ export default function AppPage() {
         setTimeout(() => setTorn(true), 120);
       }
     } catch (err) {
+      timers.current.forEach(clearTimeout);
       setPhase("error");
       setError(err instanceof Error ? err.message : "The check failed. Try again.");
     }
