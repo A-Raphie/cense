@@ -61,6 +61,23 @@ export async function GET() {
   for (let toBlock = head; toBlock >= BigInt(Number(START_BLOCK)); toBlock -= WINDOW) {
     windows.push([toBlock - WINDOW + BigInt(1), toBlock]);
   }
+  // free RPCs rate-limit bursts: run windows through a bounded conveyor
+  const CONCURRENCY = 8;
+  async function mapWindows<T>(fn: (fromBlock: bigint, toBlock: bigint) => Promise<T>): Promise<T[]> {
+    const out: T[] = new Array(windows.length);
+    let cursor = 0;
+    async function worker() {
+      while (cursor < windows.length) {
+        const i = cursor;
+        cursor += 1;
+        const [fromBlock, toBlock] = windows[i];
+        out[i] = await fn(fromBlock, toBlock);
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, windows.length) }, worker));
+    return out;
+  }
+
   const fetchTransfers = async ([tokenAddr, symbol]: readonly [`0x${string}`, string]) => {
     const found: Array<{
       txHash?: string;
@@ -69,8 +86,31 @@ export async function GET() {
       token?: string;
       block?: number;
     }> = [];
-    const results = await Promise.all(
-      windows.map(async ([fromBlock, toBlock]) => {
+    const results = await mapWindows(async (fromBlock, toBlock) => {
+      try {
+        return await client.getLogs({
+          address: tokenAddr,
+          event: {
+            type: "event",
+            name: "Transfer",
+            inputs: [
+              { name: "from", type: "address", indexed: true },
+              { name: "to", type: "address", indexed: true },
+              { name: "value", type: "uint256", indexed: false },
+            ],
+          },
+          args: { to: payTo },
+          fromBlock,
+          toBlock,
+        }) as unknown as Array<{
+          blockNumber: bigint | null;
+          args?: { from?: string; value?: bigint };
+          transactionHash?: string;
+        }>;
+      } catch (err) {
+        // one bad window (rate limit, archive depth) must not sink the ledger:
+        // retry once before giving up on it
+        await new Promise((r) => setTimeout(r, 300));
         try {
           return await client.getLogs({
             address: tokenAddr,
@@ -91,15 +131,14 @@ export async function GET() {
             args?: { from?: string; value?: bigint };
             transactionHash?: string;
           }>;
-        } catch (err) {
-          // one bad window (rate limit, archive depth) must not sink the ledger
+        } catch (err2) {
           degraded = true;
-          degradedReason = `: ` + String(err).slice(0, 200);
-          console.error(`[ledger] ${symbol} window ${fromBlock}-${toBlock} error:`, String(err).slice(0, 200));
+          degradedReason = `: ` + String(err2).slice(0, 200);
+          console.error(`[ledger] ${symbol} window ${fromBlock}-${toBlock} error:`, String(err2).slice(0, 200));
           return [];
         }
-      }),
-    );
+      }
+    });
     for (const batch of results) {
       for (const l of batch) {
         found.push({
@@ -119,20 +158,28 @@ export async function GET() {
   ]);
   transfers.push(...usdcTransfers, ...usdtTransfers);
 
-  // anchored verdict receipts (same concurrent walk, deep windows included)
+  // anchored verdict receipts (same bounded walk, deep windows included)
   let receipts: Array<{ receiptHash: string; block: number; txHash?: string }> = [];
   try {
-    const anchorResults = await Promise.all(
-      windows.map(([fromBlock, toBlock]) =>
-        client
-          .getLogs({
-            address: RECEIPT_ANCHOR,
-            event: ANCHORED_EVENT,
-            fromBlock,
-            toBlock,
-          })
-          .catch(() => []),
-      ),
+    const anchorResults = await mapWindows((fromBlock, toBlock) =>
+      client
+        .getLogs({
+          address: RECEIPT_ANCHOR,
+          event: ANCHORED_EVENT,
+          fromBlock,
+          toBlock,
+        })
+        .catch(async () => {
+          await new Promise((r) => setTimeout(r, 300));
+          return client
+            .getLogs({
+              address: RECEIPT_ANCHOR,
+              event: ANCHORED_EVENT,
+              fromBlock,
+              toBlock,
+            })
+            .catch(() => []);
+        }),
     );
     receipts = (anchorResults.flat() as unknown as Array<{
       blockNumber: bigint | null;
