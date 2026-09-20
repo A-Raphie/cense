@@ -45,8 +45,7 @@ export async function GET() {
     transport: http(process.env.LEDGER_RPC_URL ?? "https://forno.celo.org"),
   });
   const head = await client.getBlockNumber();
-  // forno serves bounded ranges; 60k blocks (~17h at 1s blocks) per query,
-  // walk back up to 4 windows. Both settlement tokens count.
+  console.log(`[ledger] payTo=${payTo} head=${head} rpc=${process.env.LEDGER_RPC_URL ?? "forno(default)"}`);
   let degraded = false;
   let degradedReason = "";
   const transfers: Array<{
@@ -60,6 +59,7 @@ export async function GET() {
     [USDC, "USDC"],
     [USDT, "USDT"],
   ] as const) {
+    let windowIndex = 0;
     for (let toBlock = head; toBlock >= BigInt(Number(START_BLOCK)); toBlock -= WINDOW) {
       const fromBlock = toBlock - WINDOW + BigInt(1);
       try {
@@ -82,6 +82,7 @@ export async function GET() {
           args?: { from?: string; value?: bigint };
           transactionHash?: string;
         }>;
+        if (batch.length > 0) console.log(`[ledger] ${symbol} window ${windowIndex} (${fromBlock}-${toBlock}): ${batch.length} transfers`);
         for (const l of batch) {
           transfers.push({
             txHash: l.transactionHash,
@@ -95,8 +96,10 @@ export async function GET() {
         // deep windows can exceed the RPC's archive depth: keep what we have
         degraded = true;
         degradedReason = `: ` + String(err).slice(0, 300);
+        console.error(`[ledger] ${symbol} window ${windowIndex} error:`, String(err).slice(0, 300));
         break;
       }
+      windowIndex += 1;
     }
   }
 
