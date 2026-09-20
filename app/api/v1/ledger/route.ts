@@ -55,78 +55,90 @@ export async function GET() {
     token?: string;
     block?: number;
   }> = [];
-  for (const [tokenAddr, symbol] of [
-    [USDC, "USDC"],
-    [USDT, "USDT"],
-  ] as const) {
-    let windowIndex = 0;
-    for (let toBlock = head; toBlock >= BigInt(Number(START_BLOCK)); toBlock -= WINDOW) {
-      const fromBlock = toBlock - WINDOW + BigInt(1);
-      try {
-        const batch = (await client.getLogs({
-          address: tokenAddr,
-          event: {
-            type: "event",
-            name: "Transfer",
-            inputs: [
-              { name: "from", type: "address", indexed: true },
-              { name: "to", type: "address", indexed: true },
-              { name: "value", type: "uint256", indexed: false },
-            ],
-          },
-          args: { to: payTo },
-          fromBlock,
-          toBlock,
-        })) as unknown as Array<{
-          blockNumber: bigint | null;
-          args?: { from?: string; value?: bigint };
-          transactionHash?: string;
-        }>;
-        if (batch.length > 0) console.log(`[ledger] ${symbol} window ${windowIndex} (${fromBlock}-${toBlock}): ${batch.length} transfers`);
-        for (const l of batch) {
-          transfers.push({
-            txHash: l.transactionHash,
-            payer: l.args?.from,
-            cents: Number(l.args?.value ?? BigInt(0)) / 1e4 / 100,
-            token: symbol,
-            block: Number(l.blockNumber ?? BigInt(0)),
-          });
-        }
-      } catch (err) {
-        // deep windows can exceed the RPC's archive depth: keep what we have
-        degraded = true;
-        degradedReason = `: ` + String(err).slice(0, 300);
-        console.error(`[ledger] ${symbol} window ${windowIndex} error:`, String(err).slice(0, 300));
-        break;
-      }
-      windowIndex += 1;
-    }
+  // windows are independent: fetch them concurrently so the full-depth walk
+  // fits the 60s function limit at any point during judging week
+  const windows: Array<[bigint, bigint]> = [];
+  for (let toBlock = head; toBlock >= BigInt(Number(START_BLOCK)); toBlock -= WINDOW) {
+    windows.push([toBlock - WINDOW + BigInt(1), toBlock]);
   }
+  const fetchTransfers = async ([tokenAddr, symbol]: readonly [`0x${string}`, string]) => {
+    const found: Array<{
+      txHash?: string;
+      payer?: string;
+      cents?: number;
+      token?: string;
+      block?: number;
+    }> = [];
+    const results = await Promise.all(
+      windows.map(async ([fromBlock, toBlock]) => {
+        try {
+          return await client.getLogs({
+            address: tokenAddr,
+            event: {
+              type: "event",
+              name: "Transfer",
+              inputs: [
+                { name: "from", type: "address", indexed: true },
+                { name: "to", type: "address", indexed: true },
+                { name: "value", type: "uint256", indexed: false },
+              ],
+            },
+            args: { to: payTo },
+            fromBlock,
+            toBlock,
+          }) as unknown as Array<{
+            blockNumber: bigint | null;
+            args?: { from?: string; value?: bigint };
+            transactionHash?: string;
+          }>;
+        } catch (err) {
+          // one bad window (rate limit, archive depth) must not sink the ledger
+          degraded = true;
+          degradedReason = `: ` + String(err).slice(0, 200);
+          console.error(`[ledger] ${symbol} window ${fromBlock}-${toBlock} error:`, String(err).slice(0, 200));
+          return [];
+        }
+      }),
+    );
+    for (const batch of results) {
+      for (const l of batch) {
+        found.push({
+          txHash: l.transactionHash,
+          payer: l.args?.from,
+          cents: Number(l.args?.value ?? BigInt(0)) / 1e4 / 100,
+          token: symbol,
+          block: Number(l.blockNumber ?? BigInt(0)),
+        });
+      }
+    }
+    return found;
+  };
+  const [usdcTransfers, usdtTransfers] = await Promise.all([
+    fetchTransfers([USDC, "USDC"] as const),
+    fetchTransfers([USDT, "USDT"] as const),
+  ]);
+  transfers.push(...usdcTransfers, ...usdtTransfers);
 
-  // anchored verdict receipts
+  // anchored verdict receipts (same concurrent walk, deep windows included)
   let receipts: Array<{ receiptHash: string; block: number; txHash?: string }> = [];
   try {
-    const anchorLogs: Array<{
+    const anchorResults = await Promise.all(
+      windows.map(([fromBlock, toBlock]) =>
+        client
+          .getLogs({
+            address: RECEIPT_ANCHOR,
+            event: ANCHORED_EVENT,
+            fromBlock,
+            toBlock,
+          })
+          .catch(() => []),
+      ),
+    );
+    receipts = (anchorResults.flat() as unknown as Array<{
       blockNumber: bigint | null;
       args?: { receiptHash?: string };
       transactionHash?: string;
-    }> = [];
-    for (let toBlock = head; toBlock >= BigInt(Number(START_BLOCK)); toBlock -= WINDOW) {
-      const fromBlock = toBlock - WINDOW + BigInt(1);
-      const batch = (await client.getLogs({
-        address: RECEIPT_ANCHOR,
-        event: ANCHORED_EVENT,
-        fromBlock,
-        toBlock,
-      })) as unknown as Array<{
-        blockNumber: bigint | null;
-        args?: { receiptHash?: string };
-        transactionHash?: string;
-      }>;
-      anchorLogs.push(...batch);
-      if (anchorLogs.length >= 12) break;
-    }
-    receipts = anchorLogs
+    }>)
       .map((l) => ({
         receiptHash: (l.args?.receiptHash ?? "").slice(0, 18) + "…",
         block: Number(l.blockNumber ?? BigInt(0)),
@@ -134,7 +146,7 @@ export async function GET() {
       }))
       .slice(0, 12);
   } catch (err) {
-    degradedReason = "receipts: " + String(err).slice(0, 300);
+    degradedReason = "receipts: " + String(err).slice(0, 200);
   }
 
   const seen = new Set<string>();
