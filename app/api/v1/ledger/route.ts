@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createPublicClient, http } from "viem";
 import { celo } from "viem/chains";
+import bakedHistory from "@/data/ledger-history.json";
 
 export const runtime = "nodejs";
 export const revalidate = 30;
@@ -58,7 +59,8 @@ export async function GET() {
   // windows are independent: fetch them concurrently so the full-depth walk
   // fits the 60s function limit at any point during judging week
   const windows: Array<[bigint, bigint]> = [];
-  for (let toBlock = head; toBlock >= BigInt(Number(START_BLOCK)); toBlock -= WINDOW) {
+  const deepBoundary = BigInt(Math.max(Number(START_BLOCK), Number(head) - 3 * Number(WINDOW)));
+  for (let toBlock = head; toBlock >= deepBoundary; toBlock -= WINDOW) {
     windows.push([toBlock - WINDOW + BigInt(1), toBlock]);
   }
   // free RPCs rate-limit bursts: run windows through a bounded conveyor
@@ -196,8 +198,26 @@ export async function GET() {
     degradedReason = "receipts: " + String(err).slice(0, 200);
   }
 
+  // merge: baked history (committed by the update-ledger cron) + the live tail
+  const baked = bakedHistory as {
+    settlements?: Array<{ txHash: string; payer: string; token: string; amount: string; block: number }>;
+    receipts?: Array<{ receiptHash: string; block: number; txHash?: string }>;
+  };
+  const historyChecks = (baked.settlements ?? []).map((s) => ({
+    txHash: s.txHash,
+    payer: s.payer,
+    cents: Number(s.amount) / 1e6,
+    token: s.token,
+    block: s.block,
+  }));
+  const historyReceipts = (baked.receipts ?? []).map((r) => ({
+    receiptHash: r.receiptHash.slice(0, 18) + "…",
+    block: r.block,
+    txHash: r.txHash,
+  }));
+
   const seen = new Set<string>();
-  const checks = transfers
+  const checks = [...transfers, ...historyChecks]
     .filter((t) => {
       const h = t.txHash ?? "";
       if (!h || seen.has(h)) return false;
@@ -207,8 +227,13 @@ export async function GET() {
     .sort((a, b) => (b.block ?? 0) - (a.block ?? 0))
     .slice(0, 12);
 
+  const receiptSeen = new Set(receipts.map((r) => r.receiptHash + r.block));
+  for (const r of historyReceipts) {
+    if (!receiptSeen.has(r.receiptHash + r.block) && receipts.length < 12) receipts.push(r);
+  }
+
   return NextResponse.json(
-    { ready: true, checks, receipts, total: transfers.length, degraded, degradedReason },
+    { ready: true, checks, receipts, total: checks.length, degraded, degradedReason },
     { headers: { "cache-control": "public, s-maxage=30, stale-while-revalidate=60" } },
   );
 }

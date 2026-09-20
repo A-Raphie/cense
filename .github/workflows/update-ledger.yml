@@ -1,0 +1,34 @@
+name: update-ledger
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/update-ledger.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+        working-directory: .
+      - run: bun run scripts/update-ledger.ts --backfill
+        working-directory: .
+      - name: commit history
+        run: |
+          git config user.name "cense-ledger-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/ledger-history.json
+          if git diff --cached --quiet; then
+            echo "no changes"
+          else
+            git commit -m "ledger: index settlements + receipts to block $(python3 -c "import json;print(json.load(open('data/ledger-history.json'))['lastScannedBlock'])")"
+            git push
+          fi
