@@ -10,8 +10,11 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const CELO_MAINNET = "eip155:42220";
-const USDC = "0xcEBA9300f2b948710d2653dD7B07f33A8B32118C";
+const USDC = "0xcebA9300f2b948710d2653dD7B07f33A8B32118C";
+const USDT = "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e"; // USA₮ (Tether USD)
 const PRICE_PER_CHECK = "1000"; // $0.001, 6 decimals
+
+const payTo = (process.env.AGENT_WALLET_ADDRESS ?? "") as `0x${string}`;
 
 const facilitator = new HTTPFacilitatorClient({
   url: "https://api.x402.celo.org",
@@ -30,11 +33,21 @@ const routes: RoutesConfig = {
       {
         scheme: "exact",
         network: CELO_MAINNET,
-        payTo: (process.env.AGENT_WALLET_ADDRESS ?? "") as `0x${string}`,
+        payTo,
         price: {
           amount: PRICE_PER_CHECK,
           asset: USDC,
           extra: { name: "USDC", version: "2" },
+        },
+      },
+      {
+        scheme: "exact",
+        network: CELO_MAINNET,
+        payTo,
+        price: {
+          amount: PRICE_PER_CHECK,
+          asset: USDT,
+          extra: { name: "Tether USD", version: "1" },
         },
       },
     ],
@@ -77,7 +90,7 @@ app.post("/api/v1/check", async (c) => {
 app.get("/api/v1/check", (c) =>
   c.json({
     paid: true,
-    price: "$0.01 USDC on Celo mainnet",
+    price: "$0.001 USDC or USDT (USA₮) on Celo mainnet",
     protocol: "x402",
     facilitator: "https://api.x402.celo.org",
     usage: "POST with x402 payment header, body { claim: string }",
