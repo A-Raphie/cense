@@ -1,6 +1,6 @@
 {
   "payTo": "0x2f7c6472d72EfF23E9cF8b13571A74C8389d9A54",
-  "lastScannedBlock": 78047888,
+  "lastScannedBlock": 78065099,
   "settlements": [
     {
       "txHash": "0x39b1284d400802d93166c4d3e20384d0dbca84e4cbdafe31f8ef7c502933da00",
@@ -29,6 +29,13 @@
       "token": "USDC",
       "amount": "300000",
       "block": 78045017
+    },
+    {
+      "txHash": "0x66f2aecc46b83e9938dd67d61e3a14d9f351ea1d8beec5010d729de12af9ed54",
+      "payer": "0xce7fda14b4db1e79a1498462a3ea3e3e912f6f72",
+      "token": "USDC",
+      "amount": "1000",
+      "block": 78045484
     }
   ],
   "receipts": [
