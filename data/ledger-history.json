@@ -15,14 +15,6 @@
       "token": "USDC",
       "amount": "1000",
       "block": 77953595
-<<<<<<< HEAD
-    },
-    {
-      "txHash": "0xefee356890ade1a7dc5ce1556a20b78ede1444a63bcdfc0110ed21f15aecc2c2",
-      "payer": "0x2f7c6472d72eff23e9cf8b13571a74c8389d9a54",
-      "token": "USDC",
-      "amount": "300000",
-      "block": 78045017
     },
     {
       "txHash": "0x66f2aecc46b83e9938dd67d61e3a14d9f351ea1d8beec5010d729de12af9ed54",
@@ -30,8 +22,6 @@
       "token": "USDC",
       "amount": "1000",
       "block": 78045484
-=======
->>>>>>> 1bde971 (fix(ledger): incoming-only settlements + degraded only when nothing read)
     }
   ],
   "receipts": [
