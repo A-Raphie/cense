@@ -143,9 +143,11 @@ export async function GET() {
     });
     for (const batch of results) {
       for (const l of batch) {
+        const payer = l.args?.from;
+        if (payer && payer.toLowerCase() === payTo.toLowerCase()) continue; // outgoing, not a settlement
         found.push({
           txHash: l.transactionHash,
-          payer: l.args?.from,
+          payer,
           cents: Number(l.args?.value ?? BigInt(0)) / 1e4 / 100,
           token: symbol,
           block: Number(l.blockNumber ?? BigInt(0)),
@@ -203,13 +205,15 @@ export async function GET() {
     settlements?: Array<{ txHash: string; payer: string; token: string; amount: string; block: number }>;
     receipts?: Array<{ receiptHash: string; block: number; txHash?: string }>;
   };
-  const historyChecks = (baked.settlements ?? []).map((s) => ({
-    txHash: s.txHash,
-    payer: s.payer,
-    cents: Number(s.amount) / 1e6,
-    token: s.token,
-    block: s.block,
-  }));
+  const historyChecks = (baked.settlements ?? [])
+    .filter((s) => s.payer.toLowerCase() !== payTo.toLowerCase())
+    .map((s) => ({
+      txHash: s.txHash,
+      payer: s.payer,
+      cents: Number(s.amount) / 1e6,
+      token: s.token,
+      block: s.block,
+    }));
   const historyReceipts = (baked.receipts ?? []).map((r) => ({
     receiptHash: r.receiptHash.slice(0, 18) + "…",
     block: r.block,
@@ -233,7 +237,7 @@ export async function GET() {
   }
 
   return NextResponse.json(
-    { ready: true, checks, receipts, total: checks.length, degraded, degradedReason },
+    { ready: true, checks, receipts, total: checks.length, degraded: degraded && checks.length === 0, degradedReason },
     { headers: { "cache-control": "public, s-maxage=30, stale-while-revalidate=60" } },
   );
 }

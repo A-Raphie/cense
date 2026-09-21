@@ -128,11 +128,13 @@ async function scanRange(fromBlock: number, toBlock: number, payer?: string) {
     });
     for (const l of logs) {
       const txHash = l.transactionHash as string;
+      const payer = "0x" + String(l.topics[1]).slice(-40);
       if (!txHash || seenTx.has(txHash)) continue;
+      if (payer.toLowerCase() === payTo.toLowerCase()) continue; // outgoing, not a settlement
       seenTx.add(txHash);
       newSettlements.push({
         txHash,
-        payer: "0x" + String(l.topics[1]).slice(-40),
+        payer,
         token: symbol,
         amount: BigInt(l.data).toString(),
         block: parseInt(l.blockNumber, 16),

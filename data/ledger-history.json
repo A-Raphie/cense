@@ -3,13 +3,6 @@
   "lastScannedBlock": 78065099,
   "settlements": [
     {
-      "txHash": "0x39b1284d400802d93166c4d3e20384d0dbca84e4cbdafe31f8ef7c502933da00",
-      "payer": "0x2f7c6472d72eff23e9cf8b13571a74c8389d9a54",
-      "token": "USDC",
-      "amount": "3000",
-      "block": 77847356
-    },
-    {
       "txHash": "0x05db1cc8c6f4e4ddc72a558f1cc21d14371fab35cd2321d1df1e53d37c33eef6",
       "payer": "0xce7fda14b4db1e79a1498462a3ea3e3e912f6f72",
       "token": "USDC",
@@ -22,6 +15,7 @@
       "token": "USDC",
       "amount": "1000",
       "block": 77953595
+<<<<<<< HEAD
     },
     {
       "txHash": "0xefee356890ade1a7dc5ce1556a20b78ede1444a63bcdfc0110ed21f15aecc2c2",
@@ -36,6 +30,8 @@
       "token": "USDC",
       "amount": "1000",
       "block": 78045484
+=======
+>>>>>>> 1bde971 (fix(ledger): incoming-only settlements + degraded only when nothing read)
     }
   ],
   "receipts": [
