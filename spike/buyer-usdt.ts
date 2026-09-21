@@ -27,7 +27,11 @@ const signer: ClientEvmSigner = {
 };
 
 const client = new x402Client(
-  (_version, accepts) => accepts.find((a) => a.asset?.toLowerCase() === USDT.toLowerCase()) ?? accepts[0],
+  (_version, accepts) => {
+    const picked = accepts.find((a) => a.asset?.toLowerCase() === USDT.toLowerCase()) ?? accepts[0];
+    console.log(`[selector] accepts=${accepts.map((a) => a.asset).join(",")} -> picked=${picked.asset}`);
+    return picked;
+  },
 ).register("eip155:42220", new ExactEvmScheme(signer));
 const fetchWithPay = wrapFetchWithPayment(globalThis.fetch, client);
 
